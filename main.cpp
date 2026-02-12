@@ -13,15 +13,17 @@ vector<vector<int>> solution = {
     {7, 8, 0}
 };
 
-// node structure
+// node structure for states
 struct Node {
     vector<vector<int>> puzzle;
-    int gn;
-    int hn;
+    int gn; // cost of start -> finish (or current)
+    int hn; // heuristic cost
 
-    int fn() const { return gn + hn; }
+    int fn() const { // A* : f = g + h
+        return gn + hn;
+    } 
 
-    bool operator<(const Node& other)  { // for min-heap behavior
+    bool operator<(const Node& other) const{ // for min-heap behavior
         return fn() > other.fn();  
     }
 };
@@ -63,7 +65,7 @@ void generalSearch(vector<vector<int>> puzzle_, int algorithm) {
         Node curr = pq.top();
         pq.pop();
 
-        // convert puzzle to string for set hashing
+        // convert 2D puzzle to string for hashing
         string s;
         for(int i = 0; i < 3; i++) {
             for(int j = 0; j < 3; j++) {
@@ -71,7 +73,7 @@ void generalSearch(vector<vector<int>> puzzle_, int algorithm) {
             }
         }
         
-        // if curr puzzle not visited yet: expand, otherwise skip
+        // if current state not visited yet: expand, otherwise skip
         if(!visited.count(s)) {
             visited.insert(s);
 
@@ -85,7 +87,7 @@ void generalSearch(vector<vector<int>> puzzle_, int algorithm) {
             }
             
             // otherwise, expand
-            
+
 
         }
     }
@@ -180,6 +182,47 @@ int selectOptionHelper(int min, int max) {
             cout << "INVALID OPTION. TRY AGAIN: ";
         }
     }
+}
+
+// generate all possible states
+vector<vector<vector<int>>> expand(const vector<vector<int>>& puzzle) {
+    vector<vector<vector<int>>> children; // list of 2D puzzles 
+    int emptyRow;
+    int emptyCol;
+
+    // coordinates for empty space
+    for(int row = 0; row < 3; row++) { 
+        for(int col = 0; col < 3; col++) {
+            if(puzzle[row][col] == 0) {
+                emptyRow = row;
+                emptyCol = col;
+                break;
+            }
+        }
+    }
+
+    // directions = {up, left, down, right}
+    int delRow[] = {-1, 0, 1, 0};
+    int delCol[] = {0, -1, 0, 1};
+
+    // check for possible moves
+    for(int k = 0; k < 4; k++) {
+        int row = emptyRow + delRow[k];
+        int col = emptyCol + delCol[k];
+
+        // within puzzle bounds
+        if(row >= 0 && row < 3 && col >= 0 && col < 3) {
+            vector<vector<int>> newPuzzle = puzzle;
+
+            // move tile to blank (swap empty and adjacent tile)
+            swap(newPuzzle[emptyRow][emptyCol], newPuzzle[row][col]);
+
+            // append new state
+            children.push_back(newPuzzle);
+        }
+    }
+
+    return children;
 }
 
 /* ////////////////////////////////////////////////////////////////////
