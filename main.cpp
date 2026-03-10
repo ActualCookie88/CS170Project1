@@ -216,6 +216,11 @@ void backwardElimination() {
     bestAccuracy = leaveOneOut(currFeatureSet);
     bestSet = currFeatureSet;
 
+    cout << "On level " << numFeatures << " of the search tree\n";
+    cout << "Using feature(s) ";
+    printSet(currFeatureSet);
+    cout << " accuracy is " << bestAccuracy * 100 << "%\n\n";
+
     // outer loop for walking up search tree
     for(int level = numFeatures; level > 1; level--) {
         cout << "On level " << level << " of the search tree\n";
