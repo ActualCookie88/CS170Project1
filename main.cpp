@@ -7,6 +7,7 @@
 #include <cmath>
 #include <limits>
 #include <chrono>
+#include <iomanip>
 
 using namespace std;
 
@@ -321,25 +322,27 @@ int main() {
     cout << "Feature Selection Algorithm" << endl << endl;
     string fileName;
 
-    // cout << "Enter dataset filename: ";
-    // cin >> fileName;
-    // cout << endl;
-
     cout << "Choose dataset: \n"
          << "(1) Small Dataset\n"
-         << "(2) Large Dataset\n";
-    int choice = selectOptionHelper(1,2);
+         << "(2) Large Dataset\n"
+         << "(3) Custom Dataset\n";
+    int choice = selectOptionHelper(1,3);
 
     if(choice == 1) {
         fileName = "CS170_Small_DataSet__7.txt";
     }
-    else {
+    else if(choice == 2){
         fileName = "CS170_Large_DataSet__85.txt";
+    }
+    else {
+        cout << "Enter dataset filename: ";
+        cin >> fileName;
+        cout << endl;
     }
 
     if(!scanData(fileName)) return 1;
-    
-    cout << "Precomputing feature distances... \n";
+
+    cout << "Precomputing feature distances... \n\n";
     precomputeDistances();
         
     cout << "This dataset has " << numFeatures << " features with " << dataSet.size() << " instances.\n";
@@ -366,6 +369,7 @@ int main() {
     auto end = chrono::high_resolution_clock::now();
 
     chrono::duration<double> elapsed = end - start;
+    cout << fixed << setprecision(2);
     cout << "Program runtime: " << elapsed.count() << " seconds\n";
 
     return 0;
