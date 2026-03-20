@@ -32,13 +32,13 @@ This project implements an 8-puzzle solver in C++ using classical AI search tech
 - Optimal pathfinding and cost analysis  
 
 ## Building the Project
-1. Clone the repository
+1. Clone the repo (if you haven't already)
 ```bash
 git clone https://github.com/ActualCookie88/IntroToAIProjects.git
-cd 8_Puzzle_Solver/
 ```
-2. Create a build directory
+2. Navigate to folder and create a build directory
 ```bash
+cd 8_Puzzle_Solver/
 mkdir build
 cd build
 ```
