@@ -55,8 +55,8 @@ ninja
 
 ## Running the Program
 ```bash
-./puzzle        # On Linux/macOS
-puzzle.exe      # On Windows
+./8puzzle        # On Linux/macOS
+8puzzle.exe      # On Windows
 ```
 
 ## Output
