@@ -9,6 +9,7 @@
 #include <chrono>
 #include <sstream>
 #include <iomanip>
+#include <limits>
 
 using namespace std;
 
@@ -41,7 +42,7 @@ int selectOptionHelper(int min, int max) {
 
 // depth input checker
 vector<vector<int>> depthSelectHelper(int choice) {
-    vector<int> depthVals = {0,2,4,8,12,16,20,24};
+    vector<int> depthVals = {0,2,4,6,8,10,12,14,16,18,20,22,24};
 
     auto it = find(depthVals.begin(), depthVals.end(), choice);
     if(it == depthVals.end()){
@@ -53,20 +54,54 @@ vector<vector<int>> depthSelectHelper(int choice) {
     return depths[index];
 }
 
-bool isSolvable(const vector<vector<int>>& puzzle) {
-    vector<int> flat;
-    for(auto &row : puzzle)
-        for(int x : row)
-            if(x != 0) flat.push_back(x); // ignore blank
+// handles custom puzzle input
+void inputCustomPuzzle(vector<vector<int>>& puzzle) {
+    unordered_set<int> seen;
+    cout << "Enter your custom puzzle row by row (use 0 for empty, numbers 1-8, separated by spaces, no duplicates):\n";
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
-    int inversions = 0;
-    for(int i = 0; i < flat.size(); i++) {
-        for(int j = i+1; j < flat.size(); j++) {
-            if(flat[i] > flat[j]) inversions++;
+    for(int i = 0; i < 3; i++) {
+        while(true) {
+            cout << "Enter row " << i+1 << ": ";
+            string line;
+            getline(cin, line);
+            stringstream ss(line);
+            vector<int> row;
+            int tile;
+            bool valid = true;
+
+            while(ss >> tile) {
+                // check valid number
+                if(tile < 0 || tile > 8) {
+                    cout << "INVALID: Numbers must be between 0 and 8.\n";
+                    valid = false;
+                    break;
+                }
+                // check duplicates
+                if(seen.count(tile)) {
+                    cout << "INVALID: Tile " << tile << " already used.\n";
+                    valid = false;
+                    break;
+                }
+                row.push_back(tile);
+            }
+
+            if(!valid) continue;
+
+            // check row length
+            if(row.size() != 3) {
+                cout << "INVALID: Must enter exactly 3 numbers per row.\n";
+                continue;
+            }
+
+            // all good, add tiles
+            for(int j = 0; j < 3; j++) {
+                puzzle[i][j] = row[j];
+                seen.insert(row[j]);
+            }
+            break;
         }
     }
-
-    return inversions % 2 == 0; // true = solvable
 }
 
 /* ////////////////////////////////////////////////////////////////////
@@ -76,95 +111,58 @@ MAIN
 //////////////////////////////////////////////////////////////////// */
 
 int main() {
+    std::srand(std::time(nullptr));
     border();
     cout << "8-Puzzle Solver\n\n";
     
     // initial user prompt
     cout << "SELECT OPTION: \n" <<
             "(1) Default Puzzle\n" <<
-            "(2) Custom Puzzle\n";
-    int choice = selectOptionHelper(1, 2);
+            "(2) Custom Puzzle\n" <<
+            "(3) Random Puzzle\n";
+    int choice = selectOptionHelper(1, 3);
     vector<vector<int>> puzzle(3, vector<int>(3));
 
     if(choice == 1) { // default puzzle
-        cout << "ENTER DEPTH OF PUZZLE (0,2,4,8,12,16,20,24): ";
-
+        cout << "ENTER DEPTH OF PUZZLE (0-24, even numbers only): ";
         puzzle = depthSelectHelper(selectOptionHelper(0, 24));
     }
     else if(choice == 2) { // custom puzzle
-        unordered_set<int> seen;
-        cout << "Enter your custom puzzle row by row (use 0 for empty, numbers 1-8, separated by spaces, no duplicates):\n";
-        cin.ignore(numeric_limits<streamsize>::max(), '\n');
-
-        for(int i = 0; i < 3; i++) {
-            while(true) {
-                cout << "Enter row " << i+1 << ": ";
-                string line;
-                getline(cin, line); // now safe
-                stringstream ss(line);
-                vector<int> row;
-                int tile;
-                bool valid = true;
-
-                while(ss >> tile) {
-                    // check valid number
-                    if(tile < 0 || tile > 8) {
-                        cout << "INVALID: Numbers must be between 0 and 8.\n";
-                        valid = false;
-                        break;
-                    }
-                    // check duplicates
-                    if(seen.count(tile)) {
-                        cout << "INVALID: Tile " << tile << " already used.\n";
-                        valid = false;
-                        break;
-                    }
-                    row.push_back(tile);
-                }
-
-                if(!valid) continue;
-
-                // check row length
-                if(row.size() != 3) {
-                    cout << "INVALID: Must enter exactly 3 numbers per row.\n";
-                    continue;
-                }
-
-                // all good, add tiles
-                for(int j = 0; j < 3; j++) {
-                    puzzle[i][j] = row[j];
-                    seen.insert(row[j]);
-                }
-                break;
-            }
-        }
+        inputCustomPuzzle(puzzle);
     }
-    else {
-        cout << "ERROR";
-        return 0;
+    else { // random puzzle
+        puzzle = generateRandomPuzzle();
     }
 
-    if(!isSolvable(puzzle)) {
+    if(!isSolvable(puzzle)) { // safety check
         cout << "\nThis puzzle is impossible to solve!\n";
         return 0;
     }
 
     border();
 
-    cout << "Selected puzzle: \n";
+    cout << "Selected puzzle:\n";
     displayPuzzle(puzzle, 1);
 
     // algorithm choice prompt
     cout << "SELECT ALGORITHM: \n" <<
             "(1) Uniform Cost Search\n" <<
             "(2) Misplaced Tile Heuristic (A*)\n" <<
-            "(3) Manhattan Distance Heuristic (A*)\n";
-    choice = selectOptionHelper(1, 3);
+            "(3) Manhattan Distance Heuristic (A*)\n" <<
+            "(4) ALL OF THEM!\n";
+    choice = selectOptionHelper(1, 4);
     
     border();
 
     auto start = chrono::high_resolution_clock::now();
-    generalSearch(puzzle, choice);
+
+    if(choice == 4) {
+        generalSearch(puzzle, choice, true);
+    }
+    else {
+        generalSearch(puzzle, choice, false);
+    }
+    
     auto end = chrono::high_resolution_clock::now();
 
     auto duration_ms = chrono::duration_cast<chrono::milliseconds>(end - start).count();

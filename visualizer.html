@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>AI & Search Projects — Visualizer</title>
+<title>Intro To AI Projects — Visualizer</title>
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -64,7 +64,7 @@
 </head>
 <body>
 
-<h1>AI & Search Projects</h1>
+<h1>Intro To AI Projects</h1>
 <div class="subtitle">
   Luke Matsunaga &nbsp;·&nbsp;
   <a href="https://github.com/ActualCookie88/IntroToAIProjects" target="_blank">github.com/ActualCookie88/IntroToAIProjects</a>
@@ -77,22 +77,11 @@
 
 <!-- 8-PUZZLE PANEL -->
 <div id="puzzle" class="panel active">
-  <div class="stat-row">
-    <div class="stat"><div class="stat-label">Solution depth</div><div class="stat-val" id="p-depth">8</div></div>
-    <div class="stat"><div class="stat-label">Nodes expanded</div><div class="stat-val" id="p-nodes">—</div></div>
-    <div class="stat"><div class="stat-label">Algorithm</div><div class="stat-val" id="p-algoname" style="font-size:14px">A* Manhattan</div></div>
-  </div>
 
   <div class="controls">
-    <label>Puzzle depth:</label>
-    <input type="range" min="2" max="24" value="8" step="2" id="depth-slider" style="width:140px;" oninput="updateDepth(this.value)">
+    <label>Solution depth:</label>
+    <input type="range" min="0" max="24" value="8" step="2" id="depth-slider" style="width:140px;" oninput="updateDepth(this.value)">
     <span id="depth-out" style="font-size:13px;font-weight:500;min-width:20px;">8</span>
-    <label style="margin-left:12px;">Algorithm:</label>
-    <select id="algo-sel" onchange="updateNodes()">
-      <option>UCS</option>
-      <option selected>A* Manhattan</option>
-      <option>A* Misplaced Tile</option>
-    </select>
   </div>
 
   <div class="step-info">Green = in goal position &nbsp;·&nbsp; Orange = misplaced &nbsp;·&nbsp; Blank = empty tile</div>
@@ -115,7 +104,7 @@
     <div class="algo-bar-bg"><div class="algo-bar" id="bar-man" style="background:#3B6D11;"></div></div>
     <div class="algo-val" id="val-man"></div>
   </div>
-  <div class="note">Node counts are representative estimates based on published A* vs UCS benchmarks for random 8-puzzle instances. Actual values vary by puzzle configuration. Replace with your measured output for full accuracy.</div>
+  <div class="note">Node counts are actual measured results. Puzzle display is a representative example at the selected depth — exact tile arrangement varies by random instance.</div>
 </div>
 
 <!-- FEATURE SELECTION PANEL -->
@@ -156,11 +145,29 @@ function switchTab(id) {
   if (id === 'feature') renderFeature();
 }
 
-const depthNodes = {
-  ucs: [10,40,200,1200,8000,50000,180000,500000,1200000,1800000,2500000,3500000,5000000],
-  mis: [8,25,120,600,2500,9000,25000,60000,130000,200000,300000,450000,700000],
-  man: [6,14,50,160,500,1500,4000,8000,15000,22000,32000,48000,70000]
+// Your actual measured results: depth -> [ucs, misplaced, manhattan]
+const realNodes = {
+  0:  [0,      0,     0],
+  2:  [5,      2,     2],
+  4:  [32,     4,     4],
+  8:  [259,    18,    12],
+  12: [1973,   119,   36],
+  16: [12708,  628,   76],
+  20: [40740,  2458,  394],
+  24: [123032, 15890, 770],
 };
+
+// Interpolate between measured depths for slider steps not in the table
+function getNodes(depth) {
+  if (realNodes[depth] !== undefined) return realNodes[depth];
+  const keys = Object.keys(realNodes).map(Number).sort((a,b) => a-b);
+  let lo = keys[0], hi = keys[keys.length-1];
+  for (let i = 0; i < keys.length-1; i++) {
+    if (keys[i] <= depth && keys[i+1] >= depth) { lo = keys[i]; hi = keys[i+1]; break; }
+  }
+  const t = (depth - lo) / (hi - lo);
+  return realNodes[lo].map((v, i) => Math.round(v + t * (realNodes[hi][i] - v)));
+}
 
 function fmtNum(n) {
   if (n >= 1000000) return (n/1000000).toFixed(1)+'M';
@@ -169,46 +176,55 @@ function fmtNum(n) {
 }
 
 function updateDepth(v) {
-  document.getElementById('depth-out').textContent = v;
-  document.getElementById('p-depth').textContent = v;
-  updateNodes();
-  drawPuzzle(parseInt(v));
+  const d = parseInt(v);
+  document.getElementById('depth-out').textContent = d;
+  updateNodes(d);
+  drawPuzzle(d);
 }
 
-function updateNodes() {
-  const depth = parseInt(document.getElementById('depth-slider').value);
-  const algo = document.getElementById('algo-sel').value;
-  const idx = Math.min(Math.round((depth-2)/2), 12);
-  const u = depthNodes.ucs[idx], m = depthNodes.mis[idx], ma = depthNodes.man[idx];
-  document.getElementById('p-algoname').textContent = algo;
-  const selVal = algo === 'UCS' ? u : algo === 'A* Manhattan' ? ma : m;
-  document.getElementById('p-nodes').textContent = fmtNum(selVal);
-  document.getElementById('bar-ucs').style.width = '100%';
-  document.getElementById('bar-mis').style.width = Math.max(2, Math.round((m/u)*100))+'%';
-  document.getElementById('bar-man').style.width = Math.max(2, Math.round((ma/u)*100))+'%';
+function updateNodes(depth) {
+  const [u, m, ma] = getNodes(depth);
+  const maxV = u || 1;
+  document.getElementById('bar-ucs').style.width = u === 0 ? '2%' : '100%';
+  document.getElementById('bar-mis').style.width = Math.max(2, Math.round((m / maxV) * 100)) + '%';
+  document.getElementById('bar-man').style.width = Math.max(2, Math.round((ma / maxV) * 100)) + '%';
   document.getElementById('val-ucs').textContent = fmtNum(u);
   document.getElementById('val-mis').textContent = fmtNum(m);
   document.getElementById('val-man').textContent = fmtNum(ma);
 }
 
+// Generates a puzzle scrambled by exactly `depth` moves from goal.
+// Fixes the original bug: excludes reversing the last move at each step,
+// so the walk can't immediately undo itself and accidentally return to solved.
+// Depth 0 shows the solved state.
 function drawPuzzle(depth) {
   const goal = [1,2,3,4,5,6,7,8,0];
   const tiles = [...goal];
-  for (let i = 0; i < depth * 2; i++) {
+
+  const neighbors = (zi) => {
+    const m = [];
+    if (zi % 3 > 0) m.push(zi - 1);
+    if (zi % 3 < 2) m.push(zi + 1);
+    if (zi > 2)     m.push(zi - 3);
+    if (zi < 6)     m.push(zi + 3);
+    return m;
+  };
+
+  let lastBlankPos = -1; // position where blank came FROM (tile we must not re-swap)
+  for (let i = 0; i < depth; i++) {
     const zi = tiles.indexOf(0);
-    const moves = [];
-    if (zi%3>0) moves.push(zi-1);
-    if (zi%3<2) moves.push(zi+1);
-    if (zi>2)   moves.push(zi-3);
-    if (zi<6)   moves.push(zi+3);
-    const swap = moves[Math.floor(Math.random()*moves.length)];
+    // Filter out the move that would undo the previous step
+    const moves = neighbors(zi).filter(m => m !== lastBlankPos);
+    const swap = moves[Math.floor(Math.random() * moves.length)];
+    lastBlankPos = zi; // blank will move to `swap`; the tile at `swap` moves to `zi`
     [tiles[zi], tiles[swap]] = [tiles[swap], tiles[zi]];
   }
+
   const grid = document.getElementById('puzzle-grid');
   grid.innerHTML = '';
   tiles.forEach((v, i) => {
     const d = document.createElement('div');
-    d.className = 'cell' + (v===0 ? ' empty' : v===goal[i] ? ' correct' : ' misplaced');
+    d.className = 'cell' + (v === 0 ? ' empty' : v === goal[i] ? ' correct' : ' misplaced');
     d.textContent = v === 0 ? '' : v;
     grid.appendChild(d);
   });
@@ -267,7 +283,7 @@ function renderFeature() {
 }
 
 drawPuzzle(8);
-updateNodes();
+updateNodes(8);
 </script>
 </body>
 </html>

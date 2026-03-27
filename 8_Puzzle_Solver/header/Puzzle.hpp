@@ -21,4 +21,7 @@ struct Node {
 };
 
 string puzzleToString(const vector<vector<int>>& p);
+
 vector<vector<vector<int>>> expand(const vector<vector<int>>& puzzle);
+
+vector<vector<int>> generateRandomPuzzle();

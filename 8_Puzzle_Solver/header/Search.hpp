@@ -1,5 +1,19 @@
 #pragma once
 #include <vector>
+#include <string>
 using std::vector;
+using std::string;
 
-void generalSearch(const vector<vector<int>>& puzzle, int algorithm);
+// struct to store search results
+struct SearchResult {
+    string name;
+    int solutionDepth;
+    int nodesExpanded;
+    int maxQueueSize;
+    bool success;
+};
+
+SearchResult runSearch(const vector<vector<int>>& puzzle_, int algorithm, bool printSteps);
+
+void generalSearch(const vector<vector<int>>& puzzle_, int algorithm, bool runAll);
+

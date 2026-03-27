@@ -19,3 +19,4 @@ extern vector<vector<vector<int>>> depths;
 // Utility functions
 void border();
 void displayPuzzle(const vector<vector<int>>& puzzle, int type);
+bool isSolvable(const vector<vector<int>>& puzzle);

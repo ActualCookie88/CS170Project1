@@ -28,22 +28,42 @@ vector<vector<vector<int>>> depths = {
     {1, 2, 3},
     {5, 0, 6},
     {4, 7, 8}
+}, { // depth 6
+    {1, 3, 6},
+    {4, 0, 2},
+    {7, 5, 8}
 }, { // depth 8
     {1, 3, 6},
     {5, 0, 2},
     {4, 7, 8}
+}, { // depth 10
+    {1, 5, 0},
+    {4, 6, 2},
+    {7, 3, 8}
 }, { // depth 12
     {1, 3, 6},
     {5, 0, 7},
     {4, 8, 2}
+}, { // depth 14
+    {7, 1, 6},
+    {5, 3, 2},
+    {0, 4, 8}
 }, { // depth 16
     {1, 6, 7},
     {5, 0, 3},
     {4, 8, 2}
+}, { // depth 18
+    {5, 2, 6},
+    {3, 7, 4},
+    {0, 1, 8}
 }, { // depth 20
     {7, 1, 2},
     {4, 8, 5},
     {6, 3, 0}
+}, { // depth 22
+    {5, 7, 3},
+    {4, 6, 1},
+    {0, 8, 2}
 }, { // depth 24
     {0, 7, 2},
     {4, 6, 1},
@@ -69,4 +89,20 @@ void displayPuzzle(const vector<vector<int>>& puzzle, int type) {
             "   [" << puzzle[2][0] << " " << puzzle[2][1] << " " << puzzle[2][2] << "]\n\n";
     }
     
+}
+
+bool isSolvable(const vector<vector<int>>& puzzle) {
+    vector<int> flat;
+    for(auto &row : puzzle)
+        for(int x : row)
+            if(x != 0) flat.push_back(x); // ignore blank
+
+    int inversions = 0;
+    for(int i = 0; i < flat.size(); i++) {
+        for(int j = i+1; j < flat.size(); j++) {
+            if(flat[i] > flat[j]) inversions++;
+        }
+    }
+
+    return inversions % 2 == 0; // true = solvable
 }

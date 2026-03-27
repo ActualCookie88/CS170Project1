@@ -1,5 +1,8 @@
 #include "Puzzle.hpp"
+#include "globals.hpp"
 #include <algorithm>
+#include <cstdlib>
+#include <ctime>
 
 // helper
 string puzzleToString(const vector<vector<int>>& p){
@@ -9,7 +12,6 @@ string puzzleToString(const vector<vector<int>>& p){
             s += std::to_string(p[i][j]);
     return s;
 }
-
 
 // generate all possible states
 vector<vector<vector<int>>> expand(const vector<vector<int>>& puzzle) {
@@ -51,4 +53,36 @@ vector<vector<vector<int>>> expand(const vector<vector<int>>& puzzle) {
     }
 
     return children;
+}
+
+// generates random puzzle of random depth
+vector<vector<int>> generateRandomPuzzle() {
+    int depth = rand() % 32 + 1;
+    vector<vector<int>> puzzle = solution;
+    string prevState = puzzleToString(puzzle);
+
+    for(int i = 0; i < depth; i++) {
+        auto children = expand(puzzle);
+
+        // prevent backtracking
+        children.erase(
+            remove_if(children.begin(), children.end(),
+                [&](const vector<vector<int>>& p){
+                    return puzzleToString(p) == prevState;
+                }),
+            children.end()
+        );
+
+        // if all children were removed, allow backtracking
+        if(children.empty()) {
+            children = expand(puzzle);
+        }
+
+        // pick random child
+        int idx = rand() % children.size();
+        prevState = puzzleToString(puzzle); // store current before moving
+        puzzle = children[idx];
+    }
+
+    return puzzle;
 }
