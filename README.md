@@ -73,4 +73,4 @@ This program displays:
 
 ## Report
 For detailed results and analysis, see project report:
-[View Project Report](report/8-Puzzle-ProjectReport.pdf)
+[View Project Report](docs/8-Puzzle-ProjectReport.pdf)
