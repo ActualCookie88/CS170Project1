@@ -6,10 +6,11 @@
 #include <unordered_map>
 #include <iostream>
 #include <limits>
+#include <algorithm>
 
 using namespace::std;
 
-SearchResult runSearch(const vector<vector<int>>& puzzle_, int algorithm, bool printSteps) {
+SearchResult runSearch(const vector<vector<int>>& puzzle_, int algorithm, bool printSteps, bool printSolution) {
     vector<string> algs = {
         "UNIFORM COST SEARCH",
         "the MISPLACED TILE HEURISTIC",
@@ -17,6 +18,7 @@ SearchResult runSearch(const vector<vector<int>>& puzzle_, int algorithm, bool p
     };
     priority_queue<Node> pq;
     unordered_map<string, int> bestGn;
+    unordered_map<string, string> parentMap; // child state string -> parent state string
 
     // initial state/node, establish gn and hn
     Node init;
@@ -28,7 +30,9 @@ SearchResult runSearch(const vector<vector<int>>& puzzle_, int algorithm, bool p
     else if(algorithm == 3) init.hn = manhattanHeuristic(puzzle_);
     else return SearchResult{"ERROR", -1, -1, -1, false};
 
+    string initStr = puzzleToString(puzzle_);
     pq.push(init);
+    parentMap[initStr] = "";
 
     int numExpanded = 0;
     int queueSize = 1;
@@ -50,13 +54,36 @@ SearchResult runSearch(const vector<vector<int>>& puzzle_, int algorithm, bool p
         // convert 2D puzzle to string for hashing
         string s = puzzleToString(curr.puzzle);
         
-        // if current state not visited yet, expand
+        // skip if we already reached this state at a lower cost
         if(bestGn.find(s) != bestGn.end() && bestGn[s] <= curr.gn) continue;
         bestGn[s] = curr.gn;
 
         // check if puzzle is solved
-        if(curr.puzzle == solution) {
-            return SearchResult{algs[algorithm-1], curr.gn, numExpanded, queueSize, true};
+        if (curr.puzzle == solution) {
+            // reconstruct solution path by following parentMap back to root
+            vector<vector<vector<int>>> path;
+            string k = s;
+            while (!k.empty()) {
+                // rebuild 2D state from 9-char string
+                vector<vector<int>> state(3, vector<int>(3));
+                for (int i = 0; i < 9; i++)
+                    state[i / 3][i % 3] = k[i] - '0';
+                path.push_back(state);
+                k = parentMap[k];
+            }
+            reverse(path.begin(), path.end());
+ 
+            // print solution path if requested
+            if (printSolution) {
+                border();
+                cout << "====== SOLUTION PATH ======\n\n";
+                for (int i = 0; i < (int)path.size(); i++) {
+                    cout << "Step " << i << ":\n";
+                    displayPuzzle(path[i], 1);
+                }
+            }
+ 
+            return SearchResult{algs[algorithm - 1], curr.gn, numExpanded, queueSize, true, path};
         }
         
         // continue expanding
@@ -69,17 +96,24 @@ SearchResult runSearch(const vector<vector<int>>& puzzle_, int algorithm, bool p
             string st = puzzleToString(childPuzzle);
             if(bestGn.count(st) && bestGn[st] <= newGn) continue;
 
+            // record parent only if this is the first/better time we see this state
+            if (!parentMap.count(st)) {
+                parentMap[st] = s;
+            }
+
             Node child;
             child.puzzle = childPuzzle;
             child.gn = newGn;
+
             if(algorithm == 1) child.hn = uniformHeuristic(childPuzzle);
             else if(algorithm == 2) child.hn = misplacedHeuristic(childPuzzle);
             else if(algorithm == 3) child.hn = manhattanHeuristic(childPuzzle);
+
             pq.push(child);
         }
     }
     // no solution found
-    return SearchResult{algs[algorithm-1], -1, numExpanded, queueSize, false};
+    return SearchResult{algs[algorithm-1], -1, numExpanded, queueSize, false, {}};
 }
 
 // general search interface
@@ -88,7 +122,7 @@ void generalSearch(const vector<vector<int>>& puzzle_, int algorithm, bool runAl
     if(runAll) {
         vector<SearchResult> results;
         for(int alg = 1; alg <= 3; alg++) {
-            auto res = runSearch(puzzle_, alg, false);
+            auto res = runSearch(puzzle_, alg, false, false);
             results.push_back(res);
         }
 
@@ -109,13 +143,17 @@ void generalSearch(const vector<vector<int>>& puzzle_, int algorithm, bool runAl
     }
 
     // run one algorithm and print results
-    SearchResult res;
-    char choice;
+    char choice, choice2;
     cout << "Print intermediate steps? (y/n): ";
-    cin >> choice;cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cin >> choice;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
+    cout << "Print solution path? (y/n): ";
+    cin >> choice2;
+    cin.ignore(numeric_limits<streamsize>::max(), '\n');
 
     bool printSteps = (choice == 'y');
-    res = runSearch(puzzle_, algorithm, printSteps);
+    bool printSolution = (choice2 == 'y');
+    SearchResult res = runSearch(puzzle_, algorithm, printSteps, printSolution);
 
     border();
     cout << "====== SEARCH RESULTS ======\n";

@@ -11,9 +11,10 @@ struct SearchResult {
     int nodesExpanded;
     int maxQueueSize;
     bool success;
+    vector<vector<vector<int>>> path;
 };
 
-SearchResult runSearch(const vector<vector<int>>& puzzle_, int algorithm, bool printSteps);
+SearchResult runSearch(const vector<vector<int>>& puzzle_, int algorithm, bool printSteps, bool printSolution);
 
 void generalSearch(const vector<vector<int>>& puzzle_, int algorithm, bool runAll);
 
