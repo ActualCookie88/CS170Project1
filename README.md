@@ -1,82 +1,88 @@
 # 8-Puzzle Solver
 
-By Luke Matsunaga
+> C++17 implementation of three search algorithms — UCS, A* Misplaced Tile, and A* Manhattan Distance — with an interactive web visualizer to compare their performance in real time.
 
-Project completed as part of an Intro to Artificial Intelligence course. 
+## Demo
+ 
+Open `docs/visualizer.html` in any browser — no build step required.
+Or click this 
+[link.](https://ActualCookie88.github.io/8-Puzzle-Solver/docs/visualizer.html)
+ 
+The visualizer lets you:
+- Scrub a **depth slider (0–24)** to load preset puzzle states and see node expansion counts update live
+- Watch an **algorithm race** with animated tile movement, adjustable playback speed (0.5×–4×), and a live node counter
+- Step through the solution **one move at a time** with forward/back controls
+- **Randomize** the puzzle and get an estimated node count based on Manhattan distance
 
-Focus: Implementing search algorithms for solving the 8-puzzle.
+## Overview
 
-This project implements an 8-puzzle solver in C++ using classical AI search techniques:
+The 8-puzzle is a classic AI search problem: rearrange a 3×3 grid of tiles to reach the goal state `[1,2,3,4,5,6,7,8,_]` in the fewest moves. I implemented three algorithms in C++ and measured their node expansion counts across solution depths from 0 to 24. At depth 24, A* Manhattan expands just **770 nodes** versus **123,032 for UCS** — a 160x difference that makes the efficiency gap viscerally clear in the visualizer.
 
-- Uniform Cost Search (UCS)
-- Misplaced Tile Heuristic (A*)
-- Manhattan Distance Heuristic (A*)
-  
+## Features
+ 
+- **A\* with Manhattan Distance heuristic** — admissible heuristic that sums per-tile grid distances, achieving optimal solutions while expanding a fraction of nodes compared to uninformed search
+- **A\* with Misplaced Tile heuristic** — simpler admissible heuristic that counts tiles not in goal position; less informed than Manhattan but still dramatically better than UCS
+- **Uniform Cost Search** — uninformed baseline for comparison; expands 160× more nodes than A* Manhattan at depth 24
+- **Real measured node counts** — data embedded in the visualizer comes from actual runs of `globals.cpp`, not estimates
+- **BFS path reconstruction** in the browser for live step-through animation, with solution paths cached to avoid redundant computation
+- **Solvability checking** — random puzzle generation uses parity (inversion count) to guarantee only solvable states are produced
+
+## Tech Stack
+ 
+| Layer | Technology |
+|---|---|
+| Solver | C++17, STL (`priority_queue`, `unordered_map`) |
+| Build | CMake |
+| Visualizer | Vanilla HTML/CSS/JS — zero dependencies |
+
+
 ## Prerequisites
 - C++17 compiler (GCC, Clang, or MSVC)
 - CMake (version 3.15+)
 - Ninja (optional, recommended for fast builds)
 
-## Features
-- Predefined puzzles of varying difficulty  
-- Custom puzzle input with validation  
-- Performance metrics:
-  - Nodes expanded  
-  - Maximum queue size  
-- Comparison of search strategies and heuristics  
-- Modular and readable C++ implementation  
-
-## Concepts Covered
-- State-space representation  
-- Informed vs uninformed search  
-- Heuristic design and evaluation  
-- Optimal pathfinding and cost analysis
-
-## Interactive Demo
-Below is a link to an interactive visual demo of the 8-puzzle.
-[Link here](https://ActualCookie88.github.io/8-Puzzle-Solver/docs/visualizer.html)
-
-## Building the Project
-1. Clone the repo
+## Getting Started
+ 
 ```bash
 git clone https://github.com/ActualCookie88/8-Puzzle-Solver.git
-```
-2. Create a build directory
-```bash
+cd 8-Puzzle-Solver
+ 
+# Build the C++ solver
 mkdir build
-cd build/
-```
-3. Configure CMake to use Ninja
-```bash
+cd build
 cmake -G Ninja ..
-```
-This generates all build files inside the build/ directory.
-
-4. Build the project
-```bash
 ninja
+ 
+# Open the visualizer (no server needed)
+open docs/visualizer.html   # macOS
+xdg-open docs/visualizer.html  # Linux
+# Windows: just double-click docs/visualizer.html
 ```
 
-## Running the Program
-```bash
-./8puzzle        # On Linux/macOS
-8puzzle.exe      # On Windows
-```
-
-You will be prompted to:
-
-Choose the puzzle type and depth or provide your own (via input)
-Choose the algorithm (UCS, Misplaced Tile, Manhattan Distance)
-Choose to visualize intermediate steps or solution path
-
-## Output
-This program displays:
-
-- Solution path from initial state to goal  
-- Total number of moves (solution cost)  
-- Number of nodes expanded during the search  
-- Maximum queue size reached
-- Program runtime
+## How It Works
+ 
+### Search Algorithms
+ 
+All three algorithms are variants of best-first search over a state space where each node is a board configuration and each edge is a tile slide. The key difference is the priority function:
+ 
+- **UCS** uses `g(n)` only — the cost to reach the current node. It's guaranteed optimal but explores the frontier exhaustively.
+- **A\* Misplaced** adds `h(n) = number of tiles not in goal position`. This is admissible (never overestimates) but coarse-grained.
+- **A\* Manhattan** adds `h(n) = sum of Manhattan distances of each tile from its goal position`. More informed than Misplaced Tile, leading to dramatically fewer expansions at deeper solutions.
+### State Representation
+ 
+Each board state is a flat array of 9 integers. The blank tile is represented as `0`. Successors are generated by sliding tiles into the blank's position, up to 4 neighbors depending on blank location.
+ 
+### Visualizer Architecture
+ 
+The browser-side visualizer runs its own BFS solver in JavaScript to reconstruct solution paths for animation. Node counts shown are the real C++ measurements, loaded from a hardcoded data table (`realNodes`) keyed by solution depth. Tile positions are managed with CSS `transform: translate()` for smooth GPU-accelerated animation.
+ 
+### What I'd Improve
+ 
+With more time I'd add iterative deepening A* (IDA*); it achieves A* optimality with O(d) memory instead of O(b^d), which matters at deeper solution depths. I'd also expose the heuristic comparison more directly in the UI, possibly with a live node expansion graph.
+ 
+## What I Learned
+ 
+Implementing all three algorithms side by side made the theoretical complexity differences concrete. Watching UCS grind through 123K nodes while A* Manhattan solves the same puzzle in 770 is a better lesson than any textbook table. I also learned that building a companion visualizer forces you to understand your own data structures well enough to re-implement them in a second language, which revealed a few edge cases I'd missed in the C++ version.
 
 ## Report
 For detailed results and analysis, see project report:
